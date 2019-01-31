@@ -116,6 +116,13 @@ kernel: $(OBJS) entry.o entryother initcode kernel.ld
 	$(OBJDUMP) -S kernel > kernel.asm
 	$(OBJDUMP) -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernel.sym
 
+
+#compile and run.
+cnr:
+	make clean
+	make
+	make qemu
+
 # kernelmemfs is a copy of kernel that maintains the
 # disk image in memory instead of writing to a disk.
 # This is not so useful for testing persistent storage or
@@ -172,6 +179,7 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
+	_hello\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
