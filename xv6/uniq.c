@@ -4,13 +4,14 @@
 #define NULL 0
 
 struct long_string{
-	char data[512];
+	char * data;
 	int current;
 	struct long_string *next;
 };
 
 struct long_string * lsnew(){
 	struct long_string * neu = malloc(sizeof(struct long_string)) ;
+	neu->data = malloc(sizeof(char[512]));
 	neu->data[511]='\0';
 	neu->next=NULL;
 	neu->current=-1;
@@ -55,7 +56,7 @@ int lsprint(struct long_string* L){
 		m[0]=L->data[i];
 		if(m[0] != '\0'){
 			printf(1, m);
-		}else{;return 1;}
+		}else{return 1;}
 	}
 	if(L->next != NULL){
 		L=L->next;
@@ -67,6 +68,7 @@ int lsprint(struct long_string* L){
 int lsdelete(struct long_string* L){
 	struct long_string * R = L->next;
 	if(R!=NULL){lsdelete(R);}
+	free(L->data);
 	free(L);
 	return 1;
 }
@@ -74,40 +76,72 @@ int lsdelete(struct long_string* L){
 
 
 //#####
-
-int main(int argc, char *argv[]){
-	int n, fd;
-	n = fd = 0;
+void uniq(int fd, int CFLAG, int DFLAG, int IFLAG){
+	int n = 0;
 	char buf[2];
 	buf[1]='\0';
-	if((fd = open(argv[1], 0)) < 0){
-      printf(1, "uniq: cannot open %s\n", argv[1]);
-      exit();
-    }
-	
-	int counter=0;
-	struct long_string* CurrentLine = NULL;
+	int flagfirst = 0;
+	int counter=1;
+	struct long_string * CurrentLine = NULL;
 	struct long_string * Line;
 	getLine:
 	Line = lsnew();
 	while((n = read(fd, buf, sizeof(char) )) > 0 ){
 		lsappend(Line, buf[0]);
-		if (buf[0] == '\n'){break;}
+		if (buf[0] == '\n' || buf[0] == '\0'){break; }
 	}
-	
-	if (n<=0){goto exit;}
-	
+	if(! flagfirst){
+		flagfirst=1;
+		CurrentLine = Line;
+		Line = NULL;
+		goto getLine;
+	}
 	if (lscompare(CurrentLine, Line)){
 		counter++;
 	}
 	else{
+		if( DFLAG && counter == 1){ goto dskip; }
+		if( CFLAG ){printf(1,"%d ",counter);}
 		lsprint(CurrentLine);
-		counter = 0;
-		lsdelete(CurrentLine);
-		CurrentLine = Line;
+		dskip:
+		counter = 1;
 	}
-	goto getLine;
+	lsdelete(CurrentLine);
+	CurrentLine = Line;
+	if(n){goto getLine;}
+	if(counter-1){
+		if( CFLAG && !DFLAG ){printf(1,"%d ",counter);}
+		if( !DFLAG ){lsprint(CurrentLine);}
+	}
+	printf(1,"\n");
+}
+
+int main(int argc, char *argv[]){
+	int fd;
+	fd = 0;
+	int fl;
+	int CFLAG, DFLAG, IFLAG;
+	CFLAG = DFLAG = IFLAG = 0;
 	
-	exit:
+	if (argc == 1){goto start;}
+	
+	int i;
+	for(i=1; i<argc; i++){
+		if (argv[i][0] != '-'){fl=i;}
+		else{
+			if (argv[i][1]=='c' || argv[i][1]=='C'){CFLAG=1;}
+			else if (argv[i][1]=='d' || argv[i][1]=='D'){DFLAG=1;}
+			else if (argv[i][1]=='i' || argv[i][1]=='I'){IFLAG=1;}
+		}
+	}
+	
+	if((fd = open(argv[fl], 0)) < 0){
+      printf(1, "uniq: cannot open %s\n", argv[fl]);
+      exit();
+    }
+	
+	start:
+	uniq(fd, CFLAG, DFLAG, IFLAG);
+	close(fd);
 	exit();
 }
