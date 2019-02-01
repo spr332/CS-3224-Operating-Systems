@@ -19,6 +19,7 @@ struct long_string * lsnew(){
 }
 
 int lsappend(struct long_string *ls, char l){
+	if( l == '\r' ){return 0;}//Carriage returns ignored.
 	while (ls->current > 510){
 		if(ls->next == NULL){ls->next = lsnew();}
 		ls = ls->next;
@@ -28,16 +29,34 @@ int lsappend(struct long_string *ls, char l){
 	ls->data[ls->current + 1] = '\0'; //511 will always be \0
 	return 1;
 }
-
-int lscompare(struct long_string* L, struct long_string* R){
+char tolower(char c){
+	if ( strchr("ABCDEFGHIJKLMNOPQRSTUVWXYZ",c)  ){
+		return (c+32);
+	}
+	return c;
+}
+int lscompare(struct long_string* L, struct long_string* R, int IFLAG){
 	if((L == NULL) && (R == NULL)){return 1;}
 	if((L == NULL) || (R == NULL)){return 0;}
 	int i;
+	char iflag_l, iflag_r;
+	
 	comp:
 	for( i=0; i<511; i++){
+		if(IFLAG){ //if (L->data[i] != R->data[i]){return 0;}
+			iflag_l = L->data[i];
+			iflag_r = R->data[i];
+			iflag_l = tolower(iflag_l);
+			iflag_r = tolower(iflag_r);
+			//printf(1,"\n **\n %d",(int)iflag_l);
+			if(iflag_l!=iflag_r){return 0;}
+			goto iskip;
+		}	
 		if (L->data[i] != R->data[i]){
 			return 0;
 		}
+		
+		iskip:
 		if(L->data[i] == '\0'){
 			return 1;
 		}
@@ -48,6 +67,7 @@ int lscompare(struct long_string* L, struct long_string* R){
 	R = R->next;
 	goto comp;
 }
+
 int lsprint(struct long_string* L){
 	int i;
 	char m[2] = "\0\0";
@@ -96,7 +116,8 @@ void uniq(int fd, int CFLAG, int DFLAG, int IFLAG){
 		Line = NULL;
 		goto getLine;
 	}
-	if (lscompare(CurrentLine, Line)){
+	
+	if (lscompare(CurrentLine, Line, IFLAG)){
 		counter++;
 	}
 	else{
@@ -109,9 +130,9 @@ void uniq(int fd, int CFLAG, int DFLAG, int IFLAG){
 	lsdelete(CurrentLine);
 	CurrentLine = Line;
 	if(n){goto getLine;}
-	if(counter-1){
-		if( CFLAG && !DFLAG ){printf(1,"%d ",counter);}
-		if( !DFLAG ){lsprint(CurrentLine);}
+	if( (counter-1 || !DFLAG) && !( counter&&DFLAG )) {
+		if( CFLAG ){printf(1,"%d ",counter);}
+		lsprint(CurrentLine);
 	}
 	printf(1,"\n");
 }
