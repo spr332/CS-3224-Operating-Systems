@@ -19,7 +19,7 @@ struct long_string * lsnew(){
 
 int lsappend(struct long_string *ls, char l){
 	while (ls->current > 510){
-		ls->next = malloc( sizeof(struct long_string) );
+		ls->next = lsnew();
 		ls = ls->next;
 	}
 	ls->current++;
