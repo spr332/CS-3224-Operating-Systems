@@ -52,11 +52,11 @@ int lsprint(struct long_string* L){
 	char m[2] = "\0\0";
 	topprint:
 	for(i=0; i<=L->current; i++){
+		if(L->current<1){break;}
 		m[0]=L->data[i];
 		if(m[0] != '\0'){
 			printf(1, m);
 		}else{;return 1;}
-	}
 	if(L->next != NULL){
 		L=L->next;
 		goto topprint;
@@ -71,43 +71,18 @@ int lsdelete(struct long_string* L){
 	return 1;
 }
 
-
-
-//#####
-
-int main(int argc, char *argv[]){
-	int n, fd;
-	n = fd = 0;
-	char buf[2];
-	buf[1]='\0';
-	if((fd = open(argv[1], 0)) < 0){
-      printf(1, "uniq: cannot open %s\n", argv[1]);
-      exit();
-    }
-	
-	int counter=0;
-	struct long_string* CurrentLine = NULL;
-	struct long_string * Line;
-	getLine:
-	Line = lsnew();
-	while((n = read(fd, buf, sizeof(char) )) > 0 ){
-		lsappend(Line, buf[0]);
-		if (buf[0] == '\n'){break;}
+int main(){
+	char l = 'l';
+	struct long_string * ls1 = lsnew();
+	struct long_string * ls2 = lsnew();
+	int i;
+	for(i=0;i<2030;i++){
+		lsappend(ls1,l);
 	}
-	
-	if (n<=0){goto exit;}
-	
-	if (lscompare(CurrentLine, Line)){
-		counter++;
+	for(i=0;i<2030;i++){
+		lsappend(ls2,l);
 	}
-	else{
-		lsprint(CurrentLine);
-		counter = 0;
-		lsdelete(CurrentLine);
-		CurrentLine = Line;
-	}
-	goto getLine;
-	
-	exit:
+	printf(1,lscompare(ls1,ls2)?"True":"False");
+	lsprint(ls2);
 	exit();
 }
